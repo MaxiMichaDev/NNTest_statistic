@@ -1,65 +1,52 @@
-import de.sfuhrm.sudoku.Creator;
-import de.sfuhrm.sudoku.GameMatrix;
-import de.sfuhrm.sudoku.Riddle;
-
-import java.awt.image.DataBuffer;
-import java.awt.image.DataBufferByte;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-
-import javafx.util.Pair;
-import org.datavec.api.records.reader.RecordReader;
-import org.datavec.api.records.reader.impl.csv.CSVRecordReader;
-import org.datavec.api.split.FileSplit;
-import org.deeplearning4j.datasets.datavec.RecordReaderMultiDataSetIterator;
-import org.deeplearning4j.datasets.iterator.INDArrayDataSetIterator;
 import org.deeplearning4j.datasets.iterator.impl.ListDataSetIterator;
-import org.deeplearning4j.nn.conf.BackpropType;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.Layer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
-import org.deeplearning4j.nn.weights.WeightInit;
-import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
 import org.nd4j.evaluation.regression.RegressionEvaluation;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
-import org.nd4j.linalg.dataset.api.MultiDataSet;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
-import org.nd4j.linalg.dataset.api.iterator.MultiDataSetIterator;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Nesterovs;
-import org.nd4j.linalg.learning.config.Sgd;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
-
-import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
-import org.deeplearning4j.nn.graph.ComputationGraph;
 
 
 import java.util.*;
 
 public class netTest {
-    public static void main(String[] args) throws IOException, InterruptedException{
+    public static final int NUM_EXAMPLES = 10000;
+    public static final int NUM_INPUTS = 4;
+    public static final int NUM_BATCHES = 10;
+    private static final int NUM_LAYERS = 2;
 
-        int numExamples = 10000;
-        int numInputs = 4;
-        int numBatches = 10;
-        float[] data = new float[numExamples * numInputs];
+    public double fitness(List<Double> weights) {
+        INDArray weightMatrix = Nd4j.create(weights).reshape(new int[]{NUM_LAYERS, NUM_INPUTS, NUM_INPUTS});
+        System.out.println("weightMatrix = " + weightMatrix);
+
+        ArrayList<Layer> layers = new ArrayList<>(NUM_LAYERS) {{
+            add(new DenseLayer.Builder().nIn(NUM_INPUTS).nOut(NUM_INPUTS)
+                    .activation(Activation.TANH).build());
+            add(new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+                    .activation(Activation.IDENTITY)
+                    .nIn(NUM_INPUTS).nOut(NUM_INPUTS).build());
+        }};
+
+        float[] data = new float[NUM_EXAMPLES * NUM_INPUTS];
         Random rng = new Random(123);
 
-        for (int i = 0; i < numExamples * numInputs; i++) {
+        for (int i = 0; i < NUM_EXAMPLES * NUM_INPUTS; i++) {
             data[i] = getRandom();
         }
-        final INDArray trainingData = Nd4j.create(data, numExamples, numInputs);
+        final INDArray trainingData = Nd4j.create(data, NUM_EXAMPLES, NUM_INPUTS);
 
         DataSet dataSet = new DataSet(trainingData, trainingData);
         List<DataSet> listDs = dataSet.asList();
         Collections.shuffle(listDs,rng);
 
-        DataSetIterator dataSetIterator = new ListDataSetIterator<>(listDs, numBatches);
+        DataSetIterator dataSetIterator = new ListDataSetIterator<>(listDs, NUM_BATCHES);
 
 //        ComputationGraphConfiguration conf = new NeuralNetConfiguration.Builder()
 //                .seed(123)
@@ -75,24 +62,9 @@ public class netTest {
 //                .backpropType(BackpropType.Standard)
 //                .build();
 
-        int numLayers = 2;
-        ArrayList<Layer> layers = new ArrayList<>(numLayers) {{
-            add(new DenseLayer.Builder().nIn(numInputs).nOut(numInputs)
-                    .activation(Activation.TANH).build());
-            add(new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
-                    .activation(Activation.IDENTITY)
-                    .nIn(numInputs).nOut(numInputs).build());
-        }};
-
-        ArrayList<INDArray> weights = new ArrayList<>(numLayers) {{
-            add(null);
-            add(null);
-        }};
-
-
         NeuralNetConfiguration.ListBuilder builder = new NeuralNetConfiguration.Builder()
                 .seed(123)
-                .weightInit(new CustomWeightInitializer(weights, numLayers))
+                .weightInit(new CustomWeightInitializer(weightMatrix, NUM_LAYERS))
                 .updater(new Nesterovs(0.01, 0.9))
                 .list();
 
@@ -103,33 +75,26 @@ public class netTest {
 
         MultiLayerNetwork neuralNet = new MultiLayerNetwork(builder.build());
 
+
 //        ComputationGraph neuralNet = new ComputationGraph(conf);
         neuralNet.init();
-        neuralNet.setListeners(new ScoreIterationListener(1));
-
-
-        while (dataSetIterator.hasNext()) {
-            DataSet trainDataSet = dataSetIterator.next();
-            neuralNet.fit(trainDataSet);
-        }
-
-//        DataSet trainDataSet = dataSetIterator.next();
-//        dataSetIterator.shuffle();
-//        for (int j = 0; j < 100; j++) {
-//            neuralNet.fit(trainDataSet);
-//        }
 
         RegressionEvaluation eval = neuralNet.evaluateRegression(dataSetIterator);
         System.out.println(eval.stats());
 
-        final INDArray testData = Nd4j.create(new float[]{1, 0, 0, 1}, 1, numInputs);
+//        final INDArray testData = Nd4j.create(new float[]{1, 0, 0, 1}, 1, numInputs);
 //        INDArray output = neuralNet.outputSingle(false, testData);
-        INDArray output = neuralNet.output(testData);
-        System.out.println(output);
-
+//        INDArray output = neuralNet.output(testData);
+//        System.out.println(output);
+        return eval.averageMeanSquaredError();
     }
 
-    public static float getRandom() {
+//    public static void main(String[] args) throws IOException, InterruptedException{
+//
+//
+//    }
+
+    public float getRandom() {
         double x = Math.random();
         if (x < 0.5) {
             return 0;
