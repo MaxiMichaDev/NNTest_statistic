@@ -17,9 +17,10 @@ import org.nd4j.linalg.lossfunctions.LossFunctions;
 import java.util.*;
 
 public class netTest {
-    public static final int NUM_EXAMPLES = 10000;
+    public static final int NUM_EXAMPLES = 10;
     public static final int NUM_INPUTS = 4;
     public static final int NUM_BATCHES = 10;
+    public static final int NUM_WEIGHTS = 32;
     private static final int NUM_LAYERS = 2;
 
     public double fitness(List<Double> weights) {
@@ -80,7 +81,7 @@ public class netTest {
         neuralNet.init();
 
         RegressionEvaluation eval = neuralNet.evaluateRegression(dataSetIterator);
-        System.out.println(eval.stats());
+//        System.out.println(eval.stats());
 
 //        final INDArray testData = Nd4j.create(new float[]{1, 0, 0, 1}, 1, numInputs);
 //        INDArray output = neuralNet.outputSingle(false, testData);

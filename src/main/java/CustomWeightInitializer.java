@@ -19,11 +19,11 @@ public class CustomWeightInitializer extends WeightInitXavier {
 
     @Override
     public INDArray init(double fanIn, double fanOut, long[] shape, char order, INDArray paramView) {
-        System.out.println("fanIn = " + fanIn + ", fanOut = " + fanOut + ", shape = " + Arrays.toString(shape) + ", order = " + order + ", paramView = " + paramView);
+//        System.out.println("fanIn = " + fanIn + ", fanOut = " + fanOut + ", shape = " + Arrays.toString(shape) + ", order = " + order + ", paramView = " + paramView);
         INDArray result = weights.get(NDArrayIndex.point(counter));
-        System.out.println("-----");
-        System.out.println("counter = " + counter);
-        System.out.println("result = " + result);
+//        System.out.println("-----");
+//        System.out.println("counter = " + counter);
+//        System.out.println("result = " + result);
         counter++;
         if (counter == numLayers) {
             counter = 0;
