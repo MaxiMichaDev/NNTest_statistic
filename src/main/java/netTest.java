@@ -14,34 +14,35 @@ import org.nd4j.linalg.learning.config.Nesterovs;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
 
+import java.lang.reflect.Array;
 import java.util.*;
 
 public class netTest {
     public static final int NUM_EXAMPLES = 10;
-    public static final int NUM_INPUTS = 4;
     public static final int NUM_BATCHES = 10;
-    public static final int NUM_WEIGHTS = 32;
-    private static final int NUM_LAYERS = 2;
+    public static final int[][] SHAPE = {{4, 4}, {4, 4}/*, {4, 1}*/};
 
-    public double fitness(List<Double> weights) {
-        INDArray weightMatrix = Nd4j.create(weights).reshape(new int[]{NUM_LAYERS, NUM_INPUTS, NUM_INPUTS});
-        System.out.println("weightMatrix = " + weightMatrix);
+    public double fitness(/*double[] weights*/ List<Double> weights) {
 
-        ArrayList<Layer> layers = new ArrayList<>(NUM_LAYERS) {{
-            add(new DenseLayer.Builder().nIn(NUM_INPUTS).nOut(NUM_INPUTS)
+        ArrayList<Layer> layers = new ArrayList<Layer>(/*NUM_LAYERS*/Array.getLength(SHAPE[0])) {{
+            add(new DenseLayer.Builder().nIn(SHAPE[0][0]).nOut(SHAPE[0][1])
                     .activation(Activation.TANH).build());
+            add(new DenseLayer.Builder().nIn(SHAPE[1][0]).nOut(SHAPE[1][1])
+                    .activation(Activation.TANH).build());
+/*
             add(new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
                     .activation(Activation.IDENTITY)
-                    .nIn(NUM_INPUTS).nOut(NUM_INPUTS).build());
+                    .nIn(NUM_INPUTS).nOut(NUM_OUTPUTS).build());
+*/
         }};
 
-        float[] data = new float[NUM_EXAMPLES * NUM_INPUTS];
+        float[] data = new float[NUM_EXAMPLES * SHAPE[0][0]];
         Random rng = new Random(123);
 
-        for (int i = 0; i < NUM_EXAMPLES * NUM_INPUTS; i++) {
+        for (int i = 0; i < NUM_EXAMPLES * SHAPE[0][0]; i++) {
             data[i] = getRandom();
         }
-        final INDArray trainingData = Nd4j.create(data, NUM_EXAMPLES, NUM_INPUTS);
+        final INDArray trainingData = Nd4j.create(data, NUM_EXAMPLES, SHAPE[0][0]);
 
         DataSet dataSet = new DataSet(trainingData, trainingData);
         List<DataSet> listDs = dataSet.asList();
@@ -65,7 +66,7 @@ public class netTest {
 
         NeuralNetConfiguration.ListBuilder builder = new NeuralNetConfiguration.Builder()
                 .seed(123)
-                .weightInit(new CustomWeightInitializer(weightMatrix, NUM_LAYERS))
+                .weightInit(new CustomWeightInitializer(/*weights*//*weightMatrixLayer1, weightMatrixLayer2,*//**//* weightMatrixLayer3,*//* NUM_LAYERS*/ SHAPE, weights))
                 .updater(new Nesterovs(0.01, 0.9))
                 .list();
 
@@ -80,20 +81,17 @@ public class netTest {
 //        ComputationGraph neuralNet = new ComputationGraph(conf);
         neuralNet.init();
 
+        final INDArray testData = Nd4j.create(new float[]{1, 0, 0, 1}, 1, SHAPE[0][0]);
+//        INDArray output = neuralNet.outputSingle(false, testData);
+        INDArray output = neuralNet.output(testData);
+//        System.out.println(output);
+
         RegressionEvaluation eval = neuralNet.evaluateRegression(dataSetIterator);
 //        System.out.println(eval.stats());
 
-//        final INDArray testData = Nd4j.create(new float[]{1, 0, 0, 1}, 1, numInputs);
-//        INDArray output = neuralNet.outputSingle(false, testData);
-//        INDArray output = neuralNet.output(testData);
-//        System.out.println(output);
         return eval.averageMeanSquaredError();
     }
 
-//    public static void main(String[] args) throws IOException, InterruptedException{
-//
-//
-//    }
 
     public float getRandom() {
         double x = Math.random();

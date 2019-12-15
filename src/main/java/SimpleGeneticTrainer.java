@@ -9,6 +9,9 @@ import org.nd4j.linalg.util.NDArrayUtil;
 import io.jenetics.DoubleGene;
 import io.jenetics.MeanAlterer;
 import io.jenetics.Mutator;
+import io.jenetics.SinglePointCrossover;
+import io.jenetics.TournamentSelector;
+import io.jenetics.RouletteWheelSelector;
 import io.jenetics.Optimize;
 import io.jenetics.Phenotype;
 import io.jenetics.engine.Engine;
@@ -25,7 +28,7 @@ import java.util.List;
 
 public class SimpleGeneticTrainer {
     private static final int R = 1;
-    private static final int N = netTest.NUM_WEIGHTS;
+    private static final int N = 32;
 
     private static double fitnessFunction(final double[] weightArray){
         double value;
@@ -33,29 +36,24 @@ public class SimpleGeneticTrainer {
 
         netTest test = new netTest();
         value = test.fitness(weightList);
+
         System.out.println(value);
         return value;
     }
     public static void main(String[] args) {
-//        INDArray dummyWeights = Nd4j.arange(32).div(100); //INDArray von 0 bis 31, geteilt durch 100
-//        List<Double> dummyWeightList = Arrays.asList(ArrayUtils.toObject(dummyWeights.toDoubleVector())); //zu Liste konvertieren (Java sehr redundant hier xD)
-//        System.out.println("dummyWeightList = " + dummyWeightList);
-//        Double[] WeightList = new Double[32];
-//        Arrays.fill(WeightList, 0.5);
-//        List<Double> dummyWeightList = Arrays.asList(WeightList);
-//        netTest test = new netTest();
-//        double fitness = test.fitness(/*WeightList*/dummyWeightList);
-//        System.out.println("fitness = " + fitness);
 
         final Engine<DoubleGene, Double> engine = Engine
                 .builder(
                         SimpleGeneticTrainer::fitnessFunction,
                         Codecs.ofVector(DoubleRange.of(-R, R), N))
-                .populationSize(1000)
+                .populationSize(100)
                 .optimize(Optimize.MINIMUM)
+//                .survivorsSelector(new TournamentSelector<>(5))
+//                .offspringSelector(new RouletteWheelSelector<>())
                 .alterers(
-                        new Mutator<>(0.01),
-                        new MeanAlterer<>(0.5))
+                        new Mutator<>(0.05),
+                        new MeanAlterer<>(1),
+                        new SinglePointCrossover<>(0.4))
                 .build();
 
         final EvolutionStatistics<Double, ?>
