@@ -20,20 +20,34 @@ import java.util.*;
 public class netTest {
     public static final int NUM_EXAMPLES = 10;
     public static final int NUM_BATCHES = 10;
-    public static final int[][] SHAPE = {{4, 4}, {4, 4}/*, {4, 1}*/};
+    public static final int[][] SHAPE = {{4, 5}, {5, 5}, {5, 4}};
+    public static final int NUM_LAYERS = Array.getLength(SHAPE);
+    public static int NUM_WEIGHTS() {
+        int numOfWeights = 0;
+        for (int i = 0; i < NUM_LAYERS; i++) {
+            numOfWeights += SHAPE[i][0] * SHAPE[i][1];
+        }
+        return numOfWeights;
+    }
 
-    public double fitness(/*double[] weights*/ List<Double> weights) {
+    public double fitness(List<Double> weights) {
 
-        ArrayList<Layer> layers = new ArrayList<Layer>(/*NUM_LAYERS*/Array.getLength(SHAPE[0])) {{
-            add(new DenseLayer.Builder().nIn(SHAPE[0][0]).nOut(SHAPE[0][1])
+        ArrayList<INDArray> weightINDArrays = new ArrayList<INDArray>(NUM_LAYERS) {{
+            int lastIndex = 0;
+            for (int layer = 0; layer < NUM_LAYERS; layer++) {
+                add(Nd4j.create(weights.subList(lastIndex, lastIndex + SHAPE[layer][0] * SHAPE[layer][1])).reshape(SHAPE[layer]));
+                lastIndex += SHAPE[layer][0] * SHAPE[layer][1];
+            }
+        }};
+
+        ArrayList<Layer> layers = new ArrayList<Layer>(NUM_LAYERS) {{
+            add(0, new DenseLayer.Builder().nIn(SHAPE[0][0]).nOut(SHAPE[0][1])
                     .activation(Activation.TANH).build());
-            add(new DenseLayer.Builder().nIn(SHAPE[1][0]).nOut(SHAPE[1][1])
+            add(1, new DenseLayer.Builder().nIn(SHAPE[1][0]).nOut(SHAPE[1][1])
                     .activation(Activation.TANH).build());
-/*
-            add(new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+            add(2, new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
                     .activation(Activation.IDENTITY)
-                    .nIn(NUM_INPUTS).nOut(NUM_OUTPUTS).build());
-*/
+                    .nIn(SHAPE[2][0]).nOut(SHAPE[2][1]).build());
         }};
 
         float[] data = new float[NUM_EXAMPLES * SHAPE[0][0]];
@@ -66,8 +80,8 @@ public class netTest {
 
         NeuralNetConfiguration.ListBuilder builder = new NeuralNetConfiguration.Builder()
                 .seed(123)
-                .weightInit(new CustomWeightInitializer(/*weights*//*weightMatrixLayer1, weightMatrixLayer2,*//**//* weightMatrixLayer3,*//* NUM_LAYERS*/ SHAPE, weights))
-                .updater(new Nesterovs(0.01, 0.9))
+                .weightInit(new CustomWeightInitializer(weightINDArrays))
+//                .updater(new Nesterovs(0.01, 0.9))
                 .list();
 
         for (int i = 0; i < layers.size(); i++) {
@@ -81,9 +95,9 @@ public class netTest {
 //        ComputationGraph neuralNet = new ComputationGraph(conf);
         neuralNet.init();
 
-        final INDArray testData = Nd4j.create(new float[]{1, 0, 0, 1}, 1, SHAPE[0][0]);
+//        final INDArray testData = Nd4j.create(new float[]{1, 0, 0, 1}, 1, SHAPE[0][0]);
 //        INDArray output = neuralNet.outputSingle(false, testData);
-        INDArray output = neuralNet.output(testData);
+//        INDArray output = neuralNet.output(testData);
 //        System.out.println(output);
 
         RegressionEvaluation eval = neuralNet.evaluateRegression(dataSetIterator);

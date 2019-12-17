@@ -28,7 +28,7 @@ import java.util.List;
 
 public class SimpleGeneticTrainer {
     private static final int R = 1;
-    private static final int N = 32;
+    private static final int N = netTest.NUM_WEIGHTS();
 
     private static double fitnessFunction(final double[] weightArray){
         double value;
@@ -46,10 +46,10 @@ public class SimpleGeneticTrainer {
                 .builder(
                         SimpleGeneticTrainer::fitnessFunction,
                         Codecs.ofVector(DoubleRange.of(-R, R), N))
-                .populationSize(100)
+                .populationSize(50)
                 .optimize(Optimize.MINIMUM)
-//                .survivorsSelector(new TournamentSelector<>(5))
-//                .offspringSelector(new RouletteWheelSelector<>())
+                .survivorsSelector(new TournamentSelector<>(5))
+                .offspringSelector(new RouletteWheelSelector<>())
                 .alterers(
                         new Mutator<>(0.05),
                         new MeanAlterer<>(1),
@@ -61,7 +61,7 @@ public class SimpleGeneticTrainer {
 
         final Phenotype<DoubleGene, Double> best = engine.stream()
 //                .limit(bySteadyFitness(7))
-                .limit(100)
+                .limit(50)
                 .peek(statistics)
                 .collect(toBestPhenotype());
 
