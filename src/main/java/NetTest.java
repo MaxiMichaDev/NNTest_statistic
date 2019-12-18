@@ -10,19 +10,20 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.learning.config.Nesterovs;
+import org.nd4j.linalg.indexing.NDArrayIndex;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 
-import java.lang.reflect.Array;
-import java.util.*;
-
-public class netTest {
+public class NetTest {
     public static final int NUM_EXAMPLES = 10;
     public static final int NUM_BATCHES = 10;
-    public static final int[][] SHAPE = {{4, 5}, {5, 5}, {5, 4}};
-    public static final int NUM_LAYERS = Array.getLength(SHAPE);
-    public static int NUM_WEIGHTS() {
+    public static final int[][] SHAPE = {{2, 3}, {3, 1}, {1, 2}};
+    public static final int NUM_LAYERS = SHAPE.length;
+    public static int numWeights() {
         int numOfWeights = 0;
         for (int i = 0; i < NUM_LAYERS; i++) {
             numOfWeights += SHAPE[i][0] * SHAPE[i][1];
@@ -32,22 +33,18 @@ public class netTest {
 
     public double fitness(List<Double> weights) {
 
-        ArrayList<INDArray> weightINDArrays = new ArrayList<INDArray>(NUM_LAYERS) {{
-            int lastIndex = 0;
-            for (int layer = 0; layer < NUM_LAYERS; layer++) {
-                add(Nd4j.create(weights.subList(lastIndex, lastIndex + SHAPE[layer][0] * SHAPE[layer][1])).reshape(SHAPE[layer]));
-                lastIndex += SHAPE[layer][0] * SHAPE[layer][1];
-            }
-        }};
+        ArrayList<INDArray> weightINDArrays = weightListToINDArray(weights);
 
-        ArrayList<Layer> layers = new ArrayList<Layer>(NUM_LAYERS) {{
-            add(0, new DenseLayer.Builder().nIn(SHAPE[0][0]).nOut(SHAPE[0][1])
-                    .activation(Activation.TANH).build());
-            add(1, new DenseLayer.Builder().nIn(SHAPE[1][0]).nOut(SHAPE[1][1])
-                    .activation(Activation.TANH).build());
-            add(2, new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+        ArrayList<Layer> layers = new ArrayList<>(NUM_LAYERS) {{
+            int last = SHAPE.length - 1;
+            for (int i = 0; i < last; i++) {
+                int[] sub = SHAPE[i];
+                add(new DenseLayer.Builder().nIn(sub[0]).nOut(sub[1])
+                        .activation(Activation.TANH).build());
+            }
+            add(last, new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
                     .activation(Activation.IDENTITY)
-                    .nIn(SHAPE[2][0]).nOut(SHAPE[2][1]).build());
+                    .nIn(SHAPE[last][0]).nOut(SHAPE[last][1]).build());
         }};
 
         float[] data = new float[NUM_EXAMPLES * SHAPE[0][0]];
@@ -103,11 +100,33 @@ public class netTest {
         RegressionEvaluation eval = neuralNet.evaluateRegression(dataSetIterator);
 //        System.out.println(eval.stats());
 
-        return eval.averageMeanSquaredError();
+        return eval.averageMeanAbsoluteError();
+    }
+
+    public static ArrayList<INDArray> weightListToINDArray(List<Double> weights) {
+        return new ArrayList<>(NUM_LAYERS) {{
+                int lastIndex = 0;
+                for (int layer = 0; layer < NUM_LAYERS; layer++) {
+                    add(Nd4j.create(weights.subList(lastIndex, lastIndex + SHAPE[layer][0] * SHAPE[layer][1])).reshape(SHAPE[layer]));
+                    lastIndex += SHAPE[layer][0] * SHAPE[layer][1];
+                }
+            }};
+    }
+
+    public static void printWeights(ArrayList<INDArray> weights) {
+        for (int i = 0; i < NetTest.NUM_LAYERS; i++) {
+            INDArray layer = weights.get(i);
+            System.out.println("Layer " + i + ":");
+            for (int j = 0; j < layer.shape()[0]; j++) {
+                INDArray neuron = layer.get(NDArrayIndex.indices(j));
+                System.out.println("   Neuron " + j + ":");
+                System.out.println("      " + neuron);
+            }
+        }
     }
 
 
-    public float getRandom() {
+    private static float getRandom() {
         double x = Math.random();
         if (x < 0.5) {
             return 0;

@@ -1,47 +1,32 @@
-import static io.jenetics.engine.EvolutionResult.toBestPhenotype;
-import static io.jenetics.engine.Limits.bySteadyFitness;
-
-import org.apache.commons.lang3.ArrayUtils;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.util.ArrayUtil;
-import org.nd4j.linalg.util.NDArrayUtil;
-import io.jenetics.DoubleGene;
-import io.jenetics.MeanAlterer;
-import io.jenetics.Mutator;
-import io.jenetics.SinglePointCrossover;
-import io.jenetics.TournamentSelector;
-import io.jenetics.RouletteWheelSelector;
-import io.jenetics.Optimize;
-import io.jenetics.Phenotype;
-import io.jenetics.engine.Engine;
+import io.jenetics.*;
 import io.jenetics.engine.Codecs;
+import io.jenetics.engine.Engine;
 import io.jenetics.engine.EvolutionStatistics;
 import io.jenetics.util.DoubleRange;
+import org.apache.commons.lang3.ArrayUtils;
+import org.nd4j.linalg.api.ndarray.INDArray;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
+import static io.jenetics.engine.EvolutionResult.toBestPhenotype;
 
 
 public class SimpleGeneticTrainer {
     private static final int R = 1;
-    private static final int N = netTest.NUM_WEIGHTS();
+    private static final int N = NetTest.numWeights();
 
     private static double fitnessFunction(final double[] weightArray){
         double value;
         List<Double> weightList = Arrays.asList(ArrayUtils.toObject(weightArray));
 
-        netTest test = new netTest();
+        NetTest test = new NetTest();
         value = test.fitness(weightList);
 
-        System.out.println(value);
         return value;
     }
     public static void main(String[] args) {
-
         final Engine<DoubleGene, Double> engine = Engine
                 .builder(
                         SimpleGeneticTrainer::fitnessFunction,
@@ -66,7 +51,12 @@ public class SimpleGeneticTrainer {
                 .collect(toBestPhenotype());
 
         System.out.println(statistics);
-        System.out.println(best);
+        ArrayList<Double> weightList = new ArrayList<>(N);
+        for (DoubleGene doubleGene : best.getGenotype().getChromosome()) {
+            weightList.add(doubleGene.getAllele());
+        }
+        ArrayList<INDArray> weights = NetTest.weightListToINDArray(weightList);
+        NetTest.printWeights(weights);
     }
 
 }
