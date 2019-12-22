@@ -19,9 +19,9 @@ import java.util.List;
 import java.util.Random;
 
 public class NetTest {
-    public static final int NUM_EXAMPLES = 10;
+    public static final int NUM_EXAMPLES = 100;
     public static final int NUM_BATCHES = 10;
-    public static final int[][] SHAPE = {{2, 3}, {3, 1}, {1, 2}};
+    public static final int[][] SHAPE = {{4, 4}/*, {4, 4}, {4, 4}*/};
     public static final int NUM_LAYERS = SHAPE.length;
     public static int numWeights() {
         int numOfWeights = 0;
@@ -31,11 +31,11 @@ public class NetTest {
         return numOfWeights;
     }
 
-    public double fitness(List<Double> weights) {
+    public double fitness(/*List<Double> weights*/ArrayList<INDArray> weightINDArrays, boolean evaluate) {
 
-        ArrayList<INDArray> weightINDArrays = weightListToINDArray(weights);
+//        ArrayList<INDArray> weightINDArrays = weightListToINDArray(weights);
 
-        ArrayList<Layer> layers = new ArrayList<>(NUM_LAYERS) {{
+        ArrayList<Layer> layers = new ArrayList<Layer>(NUM_LAYERS) {{
             int last = SHAPE.length - 1;
             for (int i = 0; i < last; i++) {
                 int[] sub = SHAPE[i];
@@ -92,19 +92,25 @@ public class NetTest {
 //        ComputationGraph neuralNet = new ComputationGraph(conf);
         neuralNet.init();
 
-//        final INDArray testData = Nd4j.create(new float[]{1, 0, 0, 1}, 1, SHAPE[0][0]);
-//        INDArray output = neuralNet.outputSingle(false, testData);
-//        INDArray output = neuralNet.output(testData);
-//        System.out.println(output);
+        if (evaluate == true) {
+            final INDArray testData = Nd4j.create(new float[]{1, 0, 0, 1, 0, 0, 1, 0}, 2, SHAPE[0][0]);
+//            INDArray output = neuralNet.outputSingle(false, testData);
+            INDArray output = neuralNet.output(testData);
+            System.out.println("input = " + testData);
+            System.out.println("output = " + output);
+        }
+
 
         RegressionEvaluation eval = neuralNet.evaluateRegression(dataSetIterator);
 //        System.out.println(eval.stats());
 
         return eval.averageMeanAbsoluteError();
+//        return eval.averageMeanSquaredError();
+
     }
 
     public static ArrayList<INDArray> weightListToINDArray(List<Double> weights) {
-        return new ArrayList<>(NUM_LAYERS) {{
+        return new ArrayList<INDArray>(NUM_LAYERS) {{
                 int lastIndex = 0;
                 for (int layer = 0; layer < NUM_LAYERS; layer++) {
                     add(Nd4j.create(weights.subList(lastIndex, lastIndex + SHAPE[layer][0] * SHAPE[layer][1])).reshape(SHAPE[layer]));
@@ -117,8 +123,8 @@ public class NetTest {
         for (int i = 0; i < NetTest.NUM_LAYERS; i++) {
             INDArray layer = weights.get(i);
             System.out.println("Layer " + i + ":");
-            for (int j = 0; j < layer.shape()[0]; j++) {
-                INDArray neuron = layer.get(NDArrayIndex.indices(j));
+            for (int j = 0; j < layer.shape()[1]; j++) {
+                INDArray neuron = layer.getColumn(j);
                 System.out.println("   Neuron " + j + ":");
                 System.out.println("      " + neuron);
             }

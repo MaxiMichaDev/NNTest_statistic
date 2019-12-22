@@ -1,8 +1,10 @@
+import static io.jenetics.engine.Limits.bySteadyFitness;
 import io.jenetics.*;
 import io.jenetics.engine.Codecs;
 import io.jenetics.engine.Engine;
 import io.jenetics.engine.EvolutionStatistics;
 import io.jenetics.util.DoubleRange;
+import io.jenetics.ext.SimulatedBinaryCrossover;
 import org.apache.commons.lang3.ArrayUtils;
 import org.nd4j.linalg.api.ndarray.INDArray;
 
@@ -22,7 +24,8 @@ public class SimpleGeneticTrainer {
         List<Double> weightList = Arrays.asList(ArrayUtils.toObject(weightArray));
 
         NetTest test = new NetTest();
-        value = test.fitness(weightList);
+        ArrayList<INDArray> weights = test.weightListToINDArray(weightList);
+        value = test.fitness(weights, false);
 
         return value;
     }
@@ -31,22 +34,25 @@ public class SimpleGeneticTrainer {
                 .builder(
                         SimpleGeneticTrainer::fitnessFunction,
                         Codecs.ofVector(DoubleRange.of(-R, R), N))
-                .populationSize(50)
+                .populationSize(100)
                 .optimize(Optimize.MINIMUM)
-                .survivorsSelector(new TournamentSelector<>(5))
-                .offspringSelector(new RouletteWheelSelector<>())
+//                .offspringFraction(0.05)
+//                .survivorsFraction(0.04)
+//                .survivorsSelector(new TruncationSelector<>(10))
+//                .offspringSelector(new TournamentSelector<>(5))
                 .alterers(
-                        new Mutator<>(0.05),
-                        new MeanAlterer<>(1),
-                        new SinglePointCrossover<>(0.4))
+                        new Mutator<>(0.03),
+                        new MeanAlterer<>(0.6),
+                        new SinglePointCrossover<>(0.8))
+//                        new SimulatedBinaryCrossover<>(1))
                 .build();
 
         final EvolutionStatistics<Double, ?>
                 statistics = EvolutionStatistics.ofNumber();
 
         final Phenotype<DoubleGene, Double> best = engine.stream()
-//                .limit(bySteadyFitness(7))
-                .limit(50)
+//                .limit(bySteadyFitness(10))
+                .limit(100)
                 .peek(statistics)
                 .collect(toBestPhenotype());
 
@@ -55,8 +61,12 @@ public class SimpleGeneticTrainer {
         for (DoubleGene doubleGene : best.getGenotype().getChromosome()) {
             weightList.add(doubleGene.getAllele());
         }
+        System.out.println(best);
         ArrayList<INDArray> weights = NetTest.weightListToINDArray(weightList);
         NetTest.printWeights(weights);
+
+        NetTest eval = new NetTest();
+        System.out.println(eval.fitness(weights, true));
     }
 
 }
