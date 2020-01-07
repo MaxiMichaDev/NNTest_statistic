@@ -43,8 +43,8 @@ public class SimpleGeneticTrainer {
                 .alterers(
                         new Mutator<>(0.03),
                         new MeanAlterer<>(0.6),
-                        new SinglePointCrossover<>(0.8))
-//                        new SimulatedBinaryCrossover<>(1))
+//                        new SinglePointCrossover<>(0.8))
+                        new SimulatedBinaryCrossover<>(0.8))
                 .build();
 
         final EvolutionStatistics<Double, ?>

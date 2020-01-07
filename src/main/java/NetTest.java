@@ -21,7 +21,7 @@ import java.util.Random;
 public class NetTest {
     public static final int NUM_EXAMPLES = 100;
     public static final int NUM_BATCHES = 10;
-    public static final int[][] SHAPE = {{4, 4}/*, {4, 4}, {4, 4}*/};
+    public static final int[][] SHAPE = {{4, 4}, {4, 4}, {4, 4}};
     public static final int NUM_LAYERS = SHAPE.length;
     public static int numWeights() {
         int numOfWeights = 0;
