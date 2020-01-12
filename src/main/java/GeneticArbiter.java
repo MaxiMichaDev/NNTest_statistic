@@ -111,7 +111,7 @@ public class GeneticArbiter {
         TerminationCondition[] terminationConditions = {
                 new MaxCandidatesCondition(50)};
 
-        String baseSaveDirectory = "model/";
+        String baseSaveDirectory = "models GeneticArbiter/";
         File f = new File(baseSaveDirectory);
         if (f.exists()) f.delete();
         f.mkdir();

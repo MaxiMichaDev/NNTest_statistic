@@ -1,13 +1,17 @@
+import org.apache.commons.io.FilenameUtils;
 import org.datavec.api.io.filters.BalancedPathFilter;
 import org.datavec.api.io.labels.ParentPathLabelGenerator;
 import org.datavec.api.split.FileSplit;
 import org.datavec.api.split.InputSplit;
 import org.datavec.image.loader.NativeImageLoader;
+import org.datavec.image.recordreader.ImageRecordReader;
 import org.datavec.image.transform.FlipImageTransform;
 import org.datavec.image.transform.ImageTransform;
 import org.datavec.image.transform.PipelineImageTransform;
 import org.datavec.image.transform.WarpImageTransform;
 import org.deeplearning4j.arbiter.MultiLayerSpace;
+import org.deeplearning4j.arbiter.evaluator.multilayer.ClassificationEvaluator;
+import org.deeplearning4j.datasets.datavec.RecordReaderDataSetIterator;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.distribution.Distribution;
@@ -19,7 +23,9 @@ import org.deeplearning4j.nn.conf.layers.SubsamplingLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.nn.weights.WeightInitDistribution;
+import org.nd4j.evaluation.classification.Evaluation;
 import org.nd4j.linalg.activations.Activation;
+import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.dataset.api.preprocessor.DataNormalization;
 import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
 import org.nd4j.linalg.learning.config.AdaDelta;
@@ -27,6 +33,7 @@ import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.nd4j.linalg.primitives.Pair;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -39,6 +46,7 @@ public class ImageRecognition {
     protected static int CHANNELS = 3;
     protected static int BATCH_SIZE = 20;
     protected static int NUM_LABELS = 2;
+    protected static int EPOCHS = 200;
     protected static long SEED = 42;
     protected static Random RNG = new Random(SEED);
     protected static int MAX_PATHS_PER_LABEL = 18;
@@ -46,7 +54,7 @@ public class ImageRecognition {
 
     public static String DATA_LOCAL_PATH;
 
-    public static void main(String[] args) {
+    public void run(String[] args) throws Exception {
 
         int numLabels;
         DATA_LOCAL_PATH = "images/";
@@ -74,8 +82,26 @@ public class ImageRecognition {
 
         DataNormalization scaler = new ImagePreProcessingScaler(0, 1);
 
+        MultiLayerNetwork network = Network();
 
+        ImageRecordReader trainRR = new ImageRecordReader(HEIGHT, WIDTH, CHANNELS, labelMaker);
+        trainRR.initialize(trainData, transform);
+        DataSetIterator trainIter = new RecordReaderDataSetIterator(trainRR, BATCH_SIZE, 1, numLabels);
+        scaler.fit(trainIter);
+        trainIter.setPreProcessor(scaler);
 
+        ImageRecordReader testRR = new ImageRecordReader(HEIGHT, WIDTH, CHANNELS, labelMaker);
+        testRR.initialize(testData);
+        DataSetIterator testIter = new RecordReaderDataSetIterator(testRR, BATCH_SIZE, 1, numLabels);
+        scaler.fit(testIter);
+        testIter.setPreProcessor(scaler);
+
+        network.fit(trainIter, EPOCHS);
+
+        network.save(new File("model ImageRecognition/" + "model.bin"));
+
+        Evaluation evaluation = network.evaluate(testIter);
+        System.out.println("Evaluation:" + evaluation);
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -92,11 +118,8 @@ public class ImageRecognition {
         return new SubsamplingLayer.Builder(kernel, new int[]{2,2}).name(name).build();
     }
 
-    private MultiLayerNetwork lenetModel() {
-        /*
-         * Revisde Lenet Model approach developed by ramgo2 achieves slightly above random
-         * Reference: https://gist.github.com/ramgo2/833f12e92359a2da9e5c2fb6333351c5
-         */
+    public MultiLayerNetwork Network() {
+
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                 .seed(SEED)
                 .l2(0.005)
@@ -117,6 +140,9 @@ public class ImageRecognition {
                 .build();
 
         return new MultiLayerNetwork(conf);
+    }
 
+    public static void main(String[] args) throws Exception {
+        new ImageRecognition().run(args);
     }
 }
