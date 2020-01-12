@@ -7,8 +7,23 @@ import org.datavec.image.transform.FlipImageTransform;
 import org.datavec.image.transform.ImageTransform;
 import org.datavec.image.transform.PipelineImageTransform;
 import org.datavec.image.transform.WarpImageTransform;
+import org.deeplearning4j.arbiter.MultiLayerSpace;
+import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
+import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
+import org.deeplearning4j.nn.conf.distribution.Distribution;
+import org.deeplearning4j.nn.conf.inputs.InputType;
+import org.deeplearning4j.nn.conf.layers.ConvolutionLayer;
+import org.deeplearning4j.nn.conf.layers.DenseLayer;
+import org.deeplearning4j.nn.conf.layers.OutputLayer;
+import org.deeplearning4j.nn.conf.layers.SubsamplingLayer;
+import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
+import org.deeplearning4j.nn.weights.WeightInit;
+import org.deeplearning4j.nn.weights.WeightInitDistribution;
+import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.dataset.api.preprocessor.DataNormalization;
 import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
+import org.nd4j.linalg.learning.config.AdaDelta;
+import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.nd4j.linalg.primitives.Pair;
 
 import java.io.File;
@@ -19,6 +34,11 @@ import java.util.Random;
 import static java.lang.Math.toIntExact;
 
 public class ImageRecognition {
+    protected static int HEIGHT = 100;
+    protected static int WIDTH = 100;
+    protected static int CHANNELS = 3;
+    protected static int BATCH_SIZE = 20;
+    protected static int NUM_LABELS = 2;
     protected static long SEED = 42;
     protected static Random RNG = new Random(SEED);
     protected static int MAX_PATHS_PER_LABEL = 18;
@@ -54,6 +74,49 @@ public class ImageRecognition {
 
         DataNormalization scaler = new ImagePreProcessingScaler(0, 1);
 
+
+
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private ConvolutionLayer convInit(String name, int in, int out, int[] kernel, int[] stride, int[] pad, double bias) {
+        return new ConvolutionLayer.Builder(kernel, stride, pad).name(name).nIn(in).nOut(out).biasInit(bias).build();
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private ConvolutionLayer conv5x5(String name, int out, int[] stride, int[] pad, double bias) {
+        return new ConvolutionLayer.Builder(new int[]{5,5}, stride, pad).name(name).nOut(out).biasInit(bias).build();
+    }
+
+    private SubsamplingLayer maxPool(String name, int[] kernel) {
+        return new SubsamplingLayer.Builder(kernel, new int[]{2,2}).name(name).build();
+    }
+
+    private MultiLayerNetwork lenetModel() {
+        /*
+         * Revisde Lenet Model approach developed by ramgo2 achieves slightly above random
+         * Reference: https://gist.github.com/ramgo2/833f12e92359a2da9e5c2fb6333351c5
+         */
+        MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
+                .seed(SEED)
+                .l2(0.005)
+                .activation(Activation.RELU)
+                .weightInit(WeightInit.XAVIER)
+                .updater(new AdaDelta())
+                .list()
+                .layer(0, convInit("cnn1", CHANNELS, 50 ,  new int[]{5, 5}, new int[]{1, 1}, new int[]{0, 0}, 0))
+                .layer(1, maxPool("maxpool1", new int[]{2,2}))
+                .layer(2, conv5x5("cnn2", 100, new int[]{5, 5}, new int[]{1, 1}, 0))
+                .layer(3, maxPool("maxool2", new int[]{2,2}))
+                .layer(4, new DenseLayer.Builder().nOut(500).build())
+                .layer(5, new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
+                        .nOut(NUM_LABELS)
+                        .activation(Activation.SOFTMAX)
+                        .build())
+                .setInputType(InputType.convolutional(HEIGHT, WIDTH, CHANNELS))
+                .build();
+
+        return new MultiLayerNetwork(conf);
 
     }
 }

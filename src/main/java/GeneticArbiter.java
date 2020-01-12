@@ -109,7 +109,7 @@ public class GeneticArbiter {
         dataSourceProperties.setProperty("minibatchSize", "100");
 
         TerminationCondition[] terminationConditions = {
-                new MaxCandidatesCondition(10)};
+                new MaxCandidatesCondition(50)};
 
         String baseSaveDirectory = "model/";
         File f = new File(baseSaveDirectory);
