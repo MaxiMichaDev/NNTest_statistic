@@ -98,6 +98,11 @@
             <artifactId>jenetics.ext</artifactId>
             <version>5.1.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.deeplearning4j</groupId>
+            <artifactId>deeplearning4j-zoo</artifactId>
+            <version>${dl4j.version}</version>
+        </dependency>
 
 
         <!--        <dependency>-->
