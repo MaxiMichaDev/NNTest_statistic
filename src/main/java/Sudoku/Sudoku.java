@@ -1,3 +1,5 @@
+package Sudoku;
+
 import de.sfuhrm.sudoku.Creator;
 import de.sfuhrm.sudoku.GameMatrix;
 import de.sfuhrm.sudoku.Riddle;
@@ -30,6 +32,11 @@ import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
 import org.deeplearning4j.nn.graph.ComputationGraph;
 
 
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 public class Sudoku {
@@ -54,18 +61,18 @@ public class Sudoku {
         int batchSize = 100;
         int numInputs = 810;
 
-        RecordReader inputReader = new CSVRecordReader(numLinesToSkip, delimiter);
-        inputReader.initialize(new FileSplit(new File(/*"D:\\JetBrains\\IdeaProjects\\NNTest_statistic\\trainFiles\\input\\"*/"D:\\JetBrains\\IdeaProjects\\NNTest_statistic\\trainFiles\\output\\"),random));
-
-        RecordReader outputReader = new CSVRecordReader(numLinesToSkip, delimiter);
-        outputReader.initialize(new FileSplit(new File("D:\\JetBrains\\IdeaProjects\\NNTest_statistic\\trainFiles\\output\\"),random));
-
-        MultiDataSetIterator iterator = new RecordReaderMultiDataSetIterator.Builder(batchSize)
-                .addReader("Inputs", inputReader)
-                .addReader("Outputs", outputReader)
-                .addInput("Inputs")
-                .addOutput("Outputs")
-                .build();
+//        RecordReader inputReader = new CSVRecordReader(numLinesToSkip, delimiter);
+//        inputReader.initialize(new FileSplit(new File(/*"D:\\JetBrains\\IdeaProjects\\NNTest_statistic\\trainFiles\\input\\"*/"D:\\JetBrains\\IdeaProjects\\NNTest_statistic\\trainFiles\\output\\"),random));
+//
+//        RecordReader outputReader = new CSVRecordReader(numLinesToSkip, delimiter);
+//        outputReader.initialize(new FileSplit(new File("D:\\JetBrains\\IdeaProjects\\NNTest_statistic\\trainFiles\\output\\"),random));
+//
+//        MultiDataSetIterator iterator = new RecordReaderMultiDataSetIterator.Builder(batchSize)
+//                .addReader("Inputs", inputReader)
+//                .addReader("Outputs", outputReader)
+//                .addInput("Inputs")
+//                .addOutput("Outputs")
+//                .build();
 
 
 //        RecordReader testInputReader = new CSVRecordReader(numLinesToSkip, delimiter);
@@ -81,27 +88,27 @@ public class Sudoku {
 //                .addOutput("TestOutputs")
 //                .build();
 
-        ComputationGraphConfiguration conf = new NeuralNetConfiguration.Builder()
-                .seed(123)
-                .weightInit(WeightInit.XAVIER)
-                .updater(new Nesterovs(0.05,0.9))
-                .l2(0.0001)
-                .graphBuilder()
-                .addInputs("input")
-                .addLayer("L1", new DenseLayer.Builder().nIn(numInputs).nOut(numInputs).activation(Activation.TANH).build(), "input")
-                .addLayer("out", new OutputLayer.Builder().lossFunction(LossFunctions.LossFunction.MSE).nIn(numInputs).nOut(numInputs).activation(Activation.IDENTITY).build(), "L1")
-                .setOutputs("out")
-                .backpropType(BackpropType.Standard)
-                .build();
+//        ComputationGraphConfiguration conf = new NeuralNetConfiguration.Builder()
+//                .seed(123)
+//                .weightInit(WeightInit.XAVIER)
+//                .updater(new Nesterovs(0.05,0.9))
+//                .l2(0.0001)
+//                .graphBuilder()
+//                .addInputs("input")
+//                .addLayer("L1", new DenseLayer.Builder().nIn(numInputs).nOut(numInputs).activation(Activation.TANH).build(), "input")
+//                .addLayer("out", new OutputLayer.Builder().lossFunction(LossFunctions.LossFunction.MSE).nIn(numInputs).nOut(numInputs).activation(Activation.IDENTITY).build(), "L1")
+//                .setOutputs("out")
+//                .backpropType(BackpropType.Standard)
+//                .build();
 
-        ComputationGraph net = new ComputationGraph(conf);
-        net.init();
-        net.setListeners(new ScoreIterationListener(1));
-
-        while (iterator.hasNext()) {
-            MultiDataSet multiDataSet = iterator.next();
-            net.fit(multiDataSet);
-        }
+//        ComputationGraph net = new ComputationGraph(conf);
+//        net.init();
+//        net.setListeners(new ScoreIterationListener(1));
+//
+//        while (iterator.hasNext()) {
+//            MultiDataSet multiDataSet = iterator.next();
+//            net.fit(multiDataSet);
+//        }
 
 //        MultiDataSet multiDataSet = iterator.next();
 //        multiDataSet.shuffle();
@@ -116,15 +123,18 @@ public class Sudoku {
 
         GameMatrix matrix = Creator.createFull();
         Riddle riddle = Creator.createRiddle(matrix);
-        float[] binarySolved = toBinary(matrix);
-        float[] binaryRiddle = toBinary(riddle);
+//        float[] binarySolved = toBinary(matrix);
+//        float[] binaryRiddle = toBinary(riddle);
 
+        INDArray inputData = Nd4j.create(normalize(riddle));
+        System.out.println(inputData);
+        INDArray outputData = Nd4j.create(normalize(matrix));
+        System.out.println(outputData);
 
 //        INDArray inputMask = Nd4j.ones(810);
 //        INDArray data = Nd4j.create(binary);
-        final INDArray data = Nd4j.create(/*binaryRiddle*/binarySolved, 1, 810);
-        INDArray output = net.outputSingle(false, data);
-
+//        final INDArray data = Nd4j.create(/*binaryRiddle*/binarySolved, 1, 810);
+//        INDArray output = net.outputSingle(false, data);
 //        System.out.println("riddle................");
 //        for (int a = 0; a < 810; a++) {
 //            System.out.print(binaryRiddle[a]);
@@ -132,14 +142,26 @@ public class Sudoku {
 //        }
 //        System.out.println();
 
-        System.out.println("solution..............");
-        for (int a = 0; a < 810; a++) {
-            System.out.print(binarySolved[a]);
-            System.out.print(',');
-        }
+//        System.out.println("solution..............");
+//        for (int a = 0; a < 810; a++) {
+//            System.out.print(binarySolved[a]);
+//            System.out.print(',');
+//        }
+//
+//        System.out.println("solution network......");
+//        System.out.println(output);
+    }
 
-        System.out.println("solution network......");
-        System.out.println(output);
+    private static float[][] normalize(GameMatrix matrix) {
+        float[][] value = new float[9][9];
+        for (byte row = 0 ; row < 9 ; row++) {
+            for (byte column = 0 ; column < 9 ; column++) {
+                value[row][column] = matrix.get(row, column) / 10;
+            }
+        }
+        System.out.println(matrix);
+        System.out.println(value);
+        return value;
     }
 
     private static float[] toBinary(GameMatrix matrix) {
