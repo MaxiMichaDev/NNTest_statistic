@@ -44,7 +44,7 @@ public class ImageRecognition {
     protected static int HEIGHT = 100;
     protected static int WIDTH = 100;
     protected static int CHANNELS = 3;
-    protected static int BATCH_SIZE = 20;
+    protected static int BATCH_SIZE = 1;
     protected static int NUM_LABELS = 2;
     protected static int EPOCHS = 200;
     protected static long SEED = 42;
@@ -96,12 +96,14 @@ public class ImageRecognition {
         scaler.fit(testIter);
         testIter.setPreProcessor(scaler);
 
-        network.fit(trainIter, EPOCHS);
+        System.out.println(trainIter.next(1));
 
-        network.save(new File("model ImageRecognition/" + "model.bin"));
-
-        Evaluation evaluation = network.evaluate(testIter);
-        System.out.println("Evaluation:" + evaluation);
+//        network.fit(trainIter, EPOCHS);
+//
+//        network.save(new File("model ImageRecognition/" + "model.bin"));
+//
+//        Evaluation evaluation = network.evaluate(testIter);
+//        System.out.println("Evaluation:" + evaluation);
     }
 
     @SuppressWarnings("SameParameterValue")

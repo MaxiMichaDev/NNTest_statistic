@@ -182,7 +182,7 @@ public class Yolo {
 
         // visualize results on the test set
         NativeImageLoader imageLoader = new NativeImageLoader(width, height, 3);
-        File pic = new File("C:\\Users\\maxi2\\Desktop\\index5.jpg");
+        File pic = new File("C:\\Users\\maxi2\\Desktop\\index.jpg");
         ImageRecordReader imageRecordReader = new ImageRecordReader(height, width, nChannels);
         FileSplit fileSplit = new FileSplit(pic, NativeImageLoader.ALLOWED_FORMATS);
         ImageTransform imageTransform = new ColorConversionTransform(COLOR_BGR2RGB);
