@@ -242,25 +242,25 @@
 //
 //
 //
-
-
-package Sudoku;
-
-import com.sun.jna.Native;
-import org.datavec.image.loader.ImageLoader;
-import org.datavec.image.loader.NativeImageLoader;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
-
-import java.io.File;
-import java.io.IOException;
-
-public class net {
-    public static void main(String[] args) throws IOException {
-        NativeImageLoader nativeImageLoader = new NativeImageLoader(10, 10, 1);
-        INDArray image = nativeImageLoader.asMatrix("C:\\Users\\maxi2\\Downloads\\20181230_160621.jpg");
-        ImagePreProcessingScaler scaler = new ImagePreProcessingScaler(0, 1);
-        scaler.transform(image);
-        System.out.println(image);
-    }
-}
+//
+////
+////package Sudoku;
+////
+////import com.sun.jna.Native;
+////import org.datavec.image.loader.ImageLoader;
+////import org.datavec.image.loader.NativeImageLoader;
+////import org.nd4j.linalg.api.ndarray.INDArray;
+////import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
+////
+////import java.io.File;
+////import java.io.IOException;
+////
+////public class net {
+////    public static void main(String[] args) throws IOException {
+////        NativeImageLoader nativeImageLoader = new NativeImageLoader(10, 10, 1);
+////        INDArray image = nativeImageLoader.asMatrix("C:\\Users\\maxi2\\Downloads\\20181230_160621.jpg");
+////        ImagePreProcessingScaler scaler = new ImagePreProcessingScaler(0, 1);
+////        scaler.transform(image);
+////        System.out.println(image);
+////    }
+////}
